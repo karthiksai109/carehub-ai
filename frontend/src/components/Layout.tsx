@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Stethoscope, Users, BedDouble, Brain,
   HeartPulse, BarChart3, Menu, X, Activity, Bell, LogOut, ChevronRight
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { path: '/', label: 'Command Center', icon: LayoutDashboard },
@@ -18,6 +19,15 @@ const navItems = [
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'DR'
 
   return (
     <div className="flex h-screen overflow-hidden bg-page">
@@ -86,9 +96,12 @@ export default function Layout() {
               <span className="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full" />
             </button>
             <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 border border-border rounded-lg">
-              <div className="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-[10px] font-bold text-white">DR</div>
-              <span className="text-xs font-semibold text-heading">Dr. Admin</span>
+              <div className="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-[10px] font-bold text-white">{initials}</div>
+              <span className="text-xs font-semibold text-heading">{user?.name || 'User'}</span>
             </div>
+            <button onClick={handleLogout} className="p-2 text-muted hover:text-danger-500 transition-colors" title="Sign out">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </header>
 

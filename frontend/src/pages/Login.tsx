@@ -1,24 +1,34 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Activity, Mail, Lock, ArrowRight } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@carehub.ai')
-  const [password, setPassword] = useState('admin123')
+  const { login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email.trim() || !password.trim()) { setError('Please enter email and password'); return }
+    setError('')
     setLoading(true)
-    localStorage.setItem('carehub_token', 'demo-token')
-    localStorage.setItem('carehub_user', JSON.stringify({ email, role: 'admin', name: 'Dr. Admin' }))
-    setTimeout(() => navigate('/'), 500)
+    try {
+      await login(email, password)
+      // role-based redirect
+      const stored = localStorage.getItem('carehub_user')
+      const user = stored ? JSON.parse(stored) : null
+      navigate(user?.role === 'patient' ? '/portal' : '/')
+    } catch { setError('Login failed. Please try again.') }
+    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] flex items-center justify-center">
-      <div className="bg-white rounded-2xl p-10 max-w-md w-[92%] shadow-2xl text-center">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl p-10 max-w-md w-full shadow-2xl text-center">
         <div className="w-16 h-16 rounded-2xl bg-primary-500 flex items-center justify-center mx-auto mb-4">
           <Activity className="w-8 h-8 text-white" />
         </div>
@@ -27,6 +37,12 @@ export default function Login() {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-50 border border-accent-200 rounded-full text-[10px] text-accent-500 font-semibold mb-6">
           <span className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse" /> 24/7 AI-Powered
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg text-danger-500 text-xs font-medium text-left">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div>
@@ -51,12 +67,14 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="flex items-start gap-2 p-3 bg-accent-50 border border-accent-200 rounded-lg text-[10px] text-accent-700 text-left leading-relaxed mt-5">
+        <p className="text-center text-xs text-muted mt-5">
+          Don't have an account? <Link to="/register" className="text-primary-500 font-semibold hover:underline">Create Account</Link>
+        </p>
+
+        <div className="flex items-start gap-2 p-3 bg-accent-50 border border-accent-200 rounded-lg text-[10px] text-accent-700 text-left leading-relaxed mt-4">
           <span className="mt-0.5">🔒</span>
           <span>All data is processed locally with end-to-end encryption. Zero-knowledge architecture ensures complete patient privacy.</span>
         </div>
-
-        <p className="text-muted text-[10px] text-center mt-4">Demo Mode — Use any credentials to explore</p>
       </div>
     </div>
   )
