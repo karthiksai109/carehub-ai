@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carehub-backend
+  namespace: carehub-ai
+  labels:
+    app: carehub-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: carehub-backend
+  template:
+    metadata:
+      labels:
+        app: carehub-backend
+    spec:
+      containers:
+        - name: backend
+          image: carehub-ai/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: carehub-secrets
+                  key: database-url
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/0"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka-service:9092"
+            - name: ELASTICSEARCH_URL
+              value: "http://elasticsearch-service:9200"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: carehub-secrets
+                  key: secret-key
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: carehub-ai
+spec:
+  selector:
+    app: carehub-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP

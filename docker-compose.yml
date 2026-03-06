@@ -1,0 +1,139 @@
+version: "3.9"
+
+services:
+  # ─── Backend API ────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: carehub-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/carehub
+      - REDIS_URL=redis://redis:6379/0
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - SECRET_KEY=${SECRET_KEY:-carehub-ai-production-secret-key}
+      - DEBUG=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── Frontend ───────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.frontend
+    container_name: carehub-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── PostgreSQL ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: carehub-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: carehub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── Redis ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: carehub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── Kafka (via Redpanda — lightweight) ─────────────────
+  kafka:
+    image: redpandadata/redpanda:latest
+    container_name: carehub-kafka
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://kafka:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+      - kafka_data:/var/lib/redpanda/data
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── Elasticsearch ──────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: carehub-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+  # ─── Grafana (Monitoring Dashboard) ─────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: carehub-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - carehub-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  es_data:
+  grafana_data:
+
+networks:
+  carehub-network:
+    driver: bridge

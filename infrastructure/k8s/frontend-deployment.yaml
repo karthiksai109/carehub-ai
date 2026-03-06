@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carehub-frontend
+  namespace: carehub-ai
+  labels:
+    app: carehub-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: carehub-frontend
+  template:
+    metadata:
+      labels:
+        app: carehub-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: carehub-ai/frontend:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: carehub-ai
+spec:
+  selector:
+    app: carehub-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer

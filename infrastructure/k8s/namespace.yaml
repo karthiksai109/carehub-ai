@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: carehub-ai
+  labels:
+    app: carehub-ai
+    environment: production
