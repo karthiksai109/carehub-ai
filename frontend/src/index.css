@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f4f7fb;
+    color: #1a202c;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f4f7fb; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-border rounded-xl p-5;
+    box-shadow: 0 4px 16px rgba(20,30,60,.06);
+  }
+  .card-hover {
+    @apply card hover:border-primary-500/40 transition-all duration-200;
+  }
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-danger {
+    @apply bg-danger-500 hover:bg-danger-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-ghost {
+    @apply bg-white hover:bg-gray-50 text-heading font-medium px-4 py-2 rounded-lg transition-colors border border-border;
+  }
+  .input-field {
+    @apply bg-white border border-border rounded-lg px-3 py-2 text-heading placeholder-muted focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 transition-colors w-full;
+  }
+  .badge { @apply px-2.5 py-0.5 rounded-md text-xs font-semibold tracking-wide font-mono; }
+  .badge-critical { @apply badge bg-danger-500/10 text-danger-500 border border-danger-500/20; }
+  .badge-emergency { @apply badge bg-orange-500/10 text-orange-600 border border-orange-500/20; }
+  .badge-urgent { @apply badge bg-warning-500/10 text-warning-500 border border-warning-500/20; }
+  .badge-semi_urgent { @apply badge bg-primary-500/10 text-primary-500 border border-primary-500/20; }
+  .badge-non_urgent { @apply badge bg-accent-500/10 text-accent-500 border border-accent-500/20; }
+  .badge-low { @apply badge bg-accent-500/10 text-accent-500 border border-accent-500/20; }
+  .badge-medium { @apply badge bg-warning-500/10 text-warning-500 border border-warning-500/20; }
+  .badge-high { @apply badge bg-danger-500/10 text-danger-500 border border-danger-500/20; }
+}
